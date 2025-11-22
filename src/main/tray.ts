@@ -10,7 +10,7 @@ export function createTray(onShowWindow: () => void, onShowSettings: () => void)
   const iconPath = path.join(__dirname, '../../assets/tray-icon.png');
 
   // Fallback: create a simple icon if asset doesn't exist
-  let trayIcon: nativeImage;
+  let trayIcon: Electron.NativeImage;
   try {
     trayIcon = nativeImage.createFromPath(iconPath);
     if (trayIcon.isEmpty()) {

@@ -5,6 +5,11 @@ import { registerGlobalHotkeys, unregisterGlobalHotkeys, getHotkeyString } from 
 import { loadSettings, saveSettings, AppSettings } from '../utils/settings';
 import { refineText, generateFromIntent, RefineRequest, IntentRequest } from '../services/llm';
 
+// Get the absolute path to the preload script
+const PRELOAD_PATH = path.join(__dirname, '../../preload/index.js');
+console.log('Preload path:', PRELOAD_PATH);
+console.log('__dirname:', __dirname);
+
 /**
  * Main application class
  * Manages windows, tray, hotkeys, and IPC communication
@@ -12,7 +17,7 @@ import { refineText, generateFromIntent, RefineRequest, IntentRequest } from '..
 class LinguaFloatApp {
   private floatingWindow: BrowserWindow | null = null;
   private settingsWindow: BrowserWindow | null = null;
-  private tray: Tray | null = null;
+  private _tray: Tray | null = null;
   private settings: AppSettings;
 
   constructor() {
@@ -56,7 +61,7 @@ class LinguaFloatApp {
    * Create the system tray icon
    */
   private createTray(): void {
-    this.tray = createTray(
+    this._tray = createTray(
       () => this.showFloatingWindow(),
       () => this.showSettingsWindow()
     );
@@ -102,7 +107,7 @@ class LinguaFloatApp {
       skipTaskbar: true,
       show: false,
       webPreferences: {
-        preload: path.join(__dirname, '../preload/index.js'),
+        preload: PRELOAD_PATH,
         contextIsolation: true,
         nodeIntegration: false,
       },
@@ -111,7 +116,7 @@ class LinguaFloatApp {
     // Load the renderer
     if (process.env.NODE_ENV === 'development') {
       this.floatingWindow.loadURL('http://localhost:5173');
-      // this.floatingWindow.webContents.openDevTools({ mode: 'detach' });
+      this.floatingWindow.webContents.openDevTools({ mode: 'detach' });
     } else {
       this.floatingWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
     }
@@ -163,7 +168,7 @@ class LinguaFloatApp {
       alwaysOnTop: false,
       show: false,
       webPreferences: {
-        preload: path.join(__dirname, '../preload/index.js'),
+        preload: PRELOAD_PATH,
         contextIsolation: true,
         nodeIntegration: false,
       },

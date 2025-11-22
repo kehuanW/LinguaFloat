@@ -31,18 +31,29 @@ function FloatingWindow() {
    * Load settings on mount
    */
   useEffect(() => {
-    loadSettings();
+    const tryLoadSettings = () => {
+      if (window.electronAPI) {
+        loadSettings();
+      } else {
+        // Retry after a short delay if API is not ready
+        setTimeout(tryLoadSettings, 100);
+      }
+    };
+
+    tryLoadSettings();
   }, []);
 
   /**
    * Auto-paste clipboard if enabled
    */
   useEffect(() => {
-    if (settings?.autoPasteClipboard) {
+    if (settings?.autoPasteClipboard && window.electronAPI) {
       window.electronAPI.getClipboard().then((text) => {
         if (text && !inputText) {
           setInputText(text);
         }
+      }).catch((err) => {
+        console.error('Failed to get clipboard:', err);
       });
     }
   }, [settings]);
@@ -52,6 +63,12 @@ function FloatingWindow() {
    */
   const loadSettings = async () => {
     try {
+      // Check if electronAPI is available
+      if (!window.electronAPI) {
+        console.error('Electron API not available');
+        return;
+      }
+
       const loadedSettings = await window.electronAPI.getSettings();
       setSettings(loadedSettings);
 
@@ -80,6 +97,11 @@ function FloatingWindow() {
    * Handle main action (Refine or Generate)
    */
   const handleAction = async () => {
+    if (!window.electronAPI) {
+      setError('Electron API not available');
+      return;
+    }
+
     setError('');
     setResult('');
     setIsLoading(true);
@@ -129,15 +151,31 @@ function FloatingWindow() {
    * Handle copy result
    */
   const handleCopy = async () => {
-    await window.electronAPI.setClipboard(result);
+    if (!window.electronAPI) {
+      console.error('Electron API not available');
+      return;
+    }
+    try {
+      await window.electronAPI.setClipboard(result);
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+    }
   };
 
   /**
    * Handle copy and close
    */
   const handleCopyAndClose = async () => {
-    await window.electronAPI.setClipboard(result);
-    await window.electronAPI.closeWindow();
+    if (!window.electronAPI) {
+      console.error('Electron API not available');
+      return;
+    }
+    try {
+      await window.electronAPI.setClipboard(result);
+      await window.electronAPI.closeWindow();
+    } catch (err) {
+      console.error('Failed to copy and close:', err);
+    }
   };
 
   return (
